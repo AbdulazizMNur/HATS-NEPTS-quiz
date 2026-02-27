@@ -262,13 +262,13 @@ def test_score_all_correct():
 
 When the tests were run, pytest showed 3 tests passed, confirming that the core functions work correctly:
 
-![Pytest screenshot](<images/Screenshot 2026-02-27 065824.png>)
+![Pytest screenshot](<images/pytest_screenshot.png>)
 
 ***3) Manual Testing***
 
 Manual testing was carried out to check that the application works correctly from the user's end. Different features were tested through the GUI, including name validation, question progression, score calculation, result saving, and application exit. Different valid and invalid inputs were used to confirm that error messages appeared when expected and that the system behaved correctly in all scenarios:
 
-![Manual Testing Table](<images/Screenshot 2026-02-27 070911.png>)
+![Manual Testing Table](<images/manual_testing_screenshot.png>)
 
 Continuous Integration through GitHub Actions makes sure that tests are automatically run whenever changes are made.
 
@@ -315,4 +315,5 @@ Continuous Integration runs automatically through GitHub Actions.
 
 
 Overall, the project went well and I was able to build a working quiz application that meets the main requirements. One part I found challenging was making sure that each answer matched the correct question when calculating the score. Since the questions and answers were stored separately, I had to make sure they were compared in the right order. Using the zip() function helped solve this, but I had to test it carefully to make sure the score was accurate. This improved my understanding of how lists and indexing work in Python. If I continued developing the project, I would improve it by adding features such as randomising the questions or using a database instead of a CSV file. Overall, the project helped me better understand how different parts of an application connect and work together.
+
 
