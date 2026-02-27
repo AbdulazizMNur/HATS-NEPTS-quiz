@@ -313,4 +313,5 @@ Continuous Integration runs automatically through GitHub Actions.
 
 ## **Evaluation**
 
+
 Overall, the project went well and I was able to build a working quiz application that meets the main requirements. One part I found challenging was making sure that each answer matched the correct question when calculating the score. Since the questions and answers were stored separately, I had to make sure they were compared in the right order. Using the zip() function helped solve this, but I had to test it carefully to make sure the score was accurate. This improved my understanding of how lists and indexing work in Python. If I continued developing the project, I would improve it by adding features such as randomising the questions or using a database instead of a CSV file. Overall, the project helped me better understand how different parts of an application connect and work together.
