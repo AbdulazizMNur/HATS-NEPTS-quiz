@@ -1,26 +1,11 @@
-"""
-validation.py
-
-Name validation for the quiz.
-Only allows letters, spaces, apostrophes, and dashes.
-No double spaces allowed.
-"""
+"""Participant-name validation used by the quiz interface."""
 
 import re
 
 
-def validate_staff_name(name: str) -> bool:
-    """
-    Validate a staff member's name
-    Returns True if valid, False if it is not
-    """
-
-    cleaned = name.strip()  # remove spaces at the start and end
-
-    if len(cleaned) < 2:
+def validate_participant_name(name: str) -> bool:
+    """Return whether a name meets the application's input rules."""
+    cleaned = name.strip()
+    if len(cleaned) < 2 or "  " in cleaned:
         return False
-
-    if "  " in cleaned:
-        return False
-
-    return re.fullmatch(r"[A-Za-z\s'-]+", cleaned) is not None # makes sure only allowed characters are used
+    return re.fullmatch(r"[A-Za-z\s'-]+", cleaned) is not None
