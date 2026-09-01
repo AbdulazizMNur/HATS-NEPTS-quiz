@@ -1,22 +1,19 @@
-"""
-test_validation.py
+import pytest
 
-Unit tests for validation.py.
-Tests both valid and invalid staff names.
-"""
-
-from validation import validate_staff_name
+from validation import validate_participant_name
 
 
-def test_validate_staff_name():
-    """Names that meet all validation rules should return True. Names that break them should return False"""
-    assert validate_staff_name("Abdulaziz") is True
-    assert validate_staff_name("Mary Jane") is True
-    assert validate_staff_name("O'Connor") is True
-    assert validate_staff_name("Jean-Paul") is True
+@pytest.mark.parametrize(
+    "name",
+    ["Abdulaziz", "Mary Jane", "O'Connor", "Jean-Paul"],
+)
+def test_valid_names(name: str) -> None:
+    assert validate_participant_name(name)
 
-    assert validate_staff_name("") is False
-    assert validate_staff_name("A") is False
-    assert validate_staff_name("Mary  Jane") is False
-    assert validate_staff_name("John123") is False
-    assert validate_staff_name("Sarah!") is False
+
+@pytest.mark.parametrize(
+    "name",
+    ["", "A", "Mary  Jane", "John123", "Sarah!"],
+)
+def test_invalid_names(name: str) -> None:
+    assert not validate_participant_name(name)

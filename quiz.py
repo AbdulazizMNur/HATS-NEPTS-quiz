@@ -1,175 +1,181 @@
-"""
-quiz.py
-
-Quiz questions + answers, calculates score and saves to CSV
-"""
+"""Core domain logic for the transport operations training quiz."""
 
 import csv
-from datetime import datetime, UTC
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 
 
+@dataclass(frozen=True)
 class Question:
-    """Multiple choice question."""
+    """A multiple-choice question and the index of its correct option."""
 
-    def __init__(self, prompt: str, options: list[str], correct_index: int):
-        self.prompt = prompt # question text
-        self.options = options # list of answers
-        self.correct_index = correct_index # index of the correct answer from the option list
+    prompt: str
+    options: tuple[str, ...]
+    correct_index: int
+
+    def __post_init__(self) -> None:
+        if len(self.options) < 2:
+            raise ValueError("A question must have at least two options.")
+        if not 0 <= self.correct_index < len(self.options):
+            raise ValueError("The correct answer index is outside the option list.")
 
 
 class Quiz:
-    """Tracks quiz progress, records answers, calculates score, saves results."""
+    """Track progress, record answers, calculate scores and save results."""
 
-    def __init__(self, questions: list[Question]):  
-        """Initialise the quiz with a list of Question objects"""
-       
+    def __init__(self, questions: list[Question]):
+        if not questions:
+            raise ValueError("A quiz must contain at least one question.")
         self.questions = questions
-        self.current_index = 0 # tracks which question the user is on
-        self.answers = [None] * len(questions) # stores the selected answers
+        self.current_index = 0
+        self.answers: list[int | None] = [None] * len(questions)
 
-    def get_current_question(self) -> Question: 
-        """ Returns current question using current_index"""
+    def get_current_question(self) -> Question:
         return self.questions[self.current_index]
 
     def set_answer(self, selected_index: int) -> None:
-        """Save the selected answer for the current question."""
-        q = self.get_current_question()
+        question = self.get_current_question()
+        if not 0 <= selected_index < len(question.options):
+            raise ValueError("The selected answer is outside the option list.")
         self.answers[self.current_index] = selected_index
 
     def has_next(self) -> bool:
-        """Return True if there is another question after the current one."""
         return self.current_index < len(self.questions) - 1
 
     def next_question(self) -> None:
-        """Go to next question"""
+        if not self.has_next():
+            raise IndexError("The quiz is already on its final question.")
         self.current_index += 1
 
     def calculate_score(self) -> int:
-        """Count how many correct answers there are"""
-        score = 0
-        for q, a in zip(self.questions, self.answers): # compare each stored answer with the correct index
-            if a is not None and a == q.correct_index:
-                score += 1
-        return score
+        return sum(
+            answer == question.correct_index
+            for question, answer in zip(self.questions, self.answers)
+            if answer is not None
+        )
 
-    def save_result(self, staff_name: str, csv_path: Path) -> None:
-        """Append the quiz result to a CSV file. If the file does not exist, headers are created first."""
-        csv_path.parent.mkdir(parents=True, exist_ok=True) # checks that the data folder exists
-
+    def save_result(self, participant_name: str, csv_path: Path) -> None:
+        csv_path.parent.mkdir(parents=True, exist_ok=True)
         file_exists = csv_path.exists()
-        score = self.calculate_score()
-        total = len(self.questions)
-        timestamp = datetime.now(UTC).isoformat()
 
-        with csv_path.open("a", newline="", encoding="utf-8") as f: # open file to append/write
-            writer = csv.writer(f)
-            if not file_exists: # write headers if new
-                writer.writerow(["staff_name", "score", "total", "completed_utc"])
-            writer.writerow([staff_name, score, total, timestamp]) # write quiz result
+        with csv_path.open("a", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            if not file_exists:
+                writer.writerow(
+                    ["participant_name", "score", "total", "completed_utc"]
+                )
+            writer.writerow(
+                [
+                    participant_name,
+                    self.calculate_score(),
+                    len(self.questions),
+                    datetime.now(UTC).isoformat(),
+                ]
+            )
 
 
-def build_questions() -> list[Question]: 
-    """Makes quiz questions (10 questions)."""
+def build_questions() -> list[Question]:
+    """Return illustrative, organisation-neutral transport scenarios."""
     return [
-        # Q1
         Question(
-            "How many crew members are required for an ST2 journey?",
-            ["1", "2", "3", "It depends on mileage"],
+            "What should be completed before a vehicle begins service?",
+            (
+                "A documented safety check",
+                "Only a mileage estimate",
+                "A customer survey",
+                "No checks are required",
+            ),
+            0,
+        ),
+        Question(
+            "What is the best response when a schedule changes?",
+            (
+                "Keep the original record",
+                "Update the approved system promptly",
+                "Wait until the end of the month",
+                "Record it in a personal notebook only",
+            ),
             1,
         ),
-        # Q2
         Question(
-            "When should a journey be marked as Cancelled?",
-            [
-                "When the patient refuses travel on arrival",
-                "When the patient does not answer the door",
-                "When the booking is stopped before the vehicle is dispatched",
-                "When traffic delays the crew",
-            ],
+            "What should you do when asked to provide assistance beyond your training?",
+            (
+                "Attempt it without support",
+                "Ignore the request",
+                "Pause and escalate using the approved procedure",
+                "Ask another passenger to help",
+            ),
             2,
         ),
-        # Q3
         Question(
-            "What should staff do if a patient is not ready at pickup time?",
-            [
-                "Leave immediately",
-                "Wait indefinitely",
-                "Follow waiting-time policy and update control",
-                "Cancel the job",
-            ],
-            2,
-        ),
-        # Q4
-        Question(
-            "When should pickup time be recorded?",
-            [
-                "When the job is booked",
-                "When the vehicle arrives on site",
-                "When the patient gets into the vehicle",
-                "When the journey finishes",
-            ],
-            2,
-        ),
-        # Q5
-        Question(
-            "If a patient appears unwell or unsafe to travel, what is the correct action?",
-            [
-                "Continue journey anyway",
-                "Leave the patient",
-                "Report to control immediately",
-                "Mark as completed",
-            ],
-            2,
-        ),
-        # Q6
-        Question(
-            "Why are seatbelts and wheelchair restraints important?",
-            [
-                "For comfort",
-                "For legal paperwork only",
-                "To prevent injury during transit",
-                "Only for long journeys",
-            ],
-            2,
-        ),
-        # Q7
-        Question(
-            "What should you do if you notice signs of neglect or abuse?",
-            [
-                "Ignore it",
-                "Tell the patient only",
-                "Report via the safeguarding process",
-                "Post in a group chat",
-            ],
-            2,
-        ),
-        # Q8
-        Question(
-            "Is it acceptable to discuss patient details in public areas?",
-            ["Yes", "Only with colleagues", "No", "If speaking quietly"],
-            2,
-        ),
-        # Q9
-        Question(
-            "Why must mileage and journey times be recorded accurately?",
-            [
-                "For driver bonuses",
-                "For invoicing and audit",
-                "Only for statistics",
-                "It is optional",
-            ],
+            "Why should operational timestamps be recorded accurately?",
+            (
+                "For decoration in reports",
+                "To support performance monitoring, audit and billing",
+                "Only to track staff breaks",
+                "They do not affect reporting",
+            ),
             1,
         ),
-        # Q10
         Question(
-            "What should you do if you make a data entry mistake?",
-            [
-                "Ignore it",
-                "Delete the record",
-                "Correct it and notify control/admin",
-                "Start a new job",
-            ],
+            "What is the best first step when two data sources disagree?",
+            (
+                "Choose the higher value",
+                "Delete both records",
+                "Verify the source evidence and follow the escalation process",
+                "Leave the discrepancy unresolved",
+            ),
+            2,
+        ),
+        Question(
+            "How should sensitive passenger information be handled?",
+            (
+                "Share it in public areas",
+                "Use approved systems and share only with authorised people",
+                "Save it to a personal device",
+                "Include it in informal group chats",
+            ),
+            1,
+        ),
+        Question(
+            "What should happen before safety equipment is used?",
+            (
+                "It should be checked and used according to training",
+                "It should be used only on long journeys",
+                "Checks should be skipped when busy",
+                "Passengers should inspect it themselves",
+            ),
+            0,
+        ),
+        Question(
+            "What is an appropriate response to a safeguarding concern?",
+            (
+                "Discuss it publicly",
+                "Record factual information and use the approved reporting route",
+                "Investigate it personally",
+                "Wait to see whether it happens again",
+            ),
+            1,
+        ),
+        Question(
+            "What information supports a clear cancellation record?",
+            (
+                "A reason and accurate timestamp",
+                "Only the passenger's name",
+                "An informal message",
+                "No supporting information",
+            ),
+            0,
+        ),
+        Question(
+            "How should an operational data-entry mistake be corrected?",
+            (
+                "Hide the original error",
+                "Create an unrelated replacement record",
+                "Use the approved correction process and preserve the audit trail",
+                "Ignore it if a report has already run",
+            ),
             2,
         ),
     ]
